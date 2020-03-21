@@ -4,7 +4,7 @@
       <!-- 表单图片 -->
 
       <div class="pic">
-        <img src="@/assets/movie.jpg" alt srcset />
+        <img src="@/assets/picture/movie.jpg" alt srcset />
       </div>
 
       <!-- 表单主题 1.绑定model，2，表单验证:1.绑定rules,2,给rules{}放各种验证规则，3，将各项规则通过prop绑给formItem -->
@@ -82,7 +82,7 @@ export default {
            2，通过编程式导航跳转到后台主页，路由地址/home
         */
        // 调用 sessionStorage 来保存 token
-        console.log(res);
+      
         
           window.sessionStorage.setItem("token",res.data.token);
        // 登录跳转到home主页

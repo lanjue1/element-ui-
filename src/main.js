@@ -15,6 +15,13 @@ import './assets/base.css'
 import axios from 'axios';
 //配置请求根路径
 axios.defaults.baseURL='https://www.liulongbin.top:8888/api/private/v1';
+// 通过axios请求拦截器添加token，保证拥有获取数据的权限
+//在发送请求之前做一下请求预处理request，给发送的请求挂载一个请求头 Authorization
+axios.interceptors.request.use(config=>{
+  //console.log(config)
+  config.headers.Authorization=window.sessionStorage.getItem('token')
+  return config // 必须得返回这个回调函数出去，这个经过挂载了请求头的会掉函数才是用来和服务器发送请求的；
+})
 Vue.use(ElementUI);
 Vue.prototype.$message=Message;
 Vue.prototype.$axios=axios;
