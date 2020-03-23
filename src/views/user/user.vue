@@ -1,12 +1,6 @@
 <template>
   <div class="users">
-    <el-breadcrumb separator=">">
-      <el-breadcrumb-item :to="{ path: '/home' }">首页</el-breadcrumb-item>
-      <el-breadcrumb-item>
-        <a href="/">用户管理</a>
-      </el-breadcrumb-item>
-      <el-breadcrumb-item>用户列表</el-breadcrumb-item>
-    </el-breadcrumb>
+    <Crumb :name="name"></Crumb>
 
     <el-card class="box-card">
       <el-row :gutter="15">
@@ -50,7 +44,7 @@
           </template>
         </el-table-column>
 
-        <el-table-column label="操作" width="170px">
+        <el-table-column label="操作" width="250px">
           <!-- 操作图标按钮 通过scope.row可以拿到本行用户信息，可用来给3个图标提供用户信息 -->
           <template v-slot:default="scope">
             <el-button-group>
@@ -59,14 +53,14 @@
                 icon="el-icon-edit"
                 size="mini"
                 @click="editUser(scope.row.id)"
-              ></el-button>
+              >编辑</el-button>
 
               <el-button
                 type="danger"
                 icon="el-icon-delete"
                 size="mini"
                 @click="clearUser(scope.row.id)"
-              ></el-button>
+              >删除</el-button>
 
               <el-tooltip
                 class="item"
@@ -75,7 +69,12 @@
                 placement="top"
                 :enterable="false"
               >
-                <el-button type="warning" icon="el-icon-setting" size="mini"></el-button>
+                <el-button
+                  type="warning"
+                  icon="el-icon-setting"
+                  size="mini"
+                  @click="allotRole(scope.row)"
+                ></el-button>
               </el-tooltip>
             </el-button-group>
           </template>
@@ -95,8 +94,9 @@
     </el-card>
 
     <!-- 确定添加 用户 的对话框 重置使用@close 方法，去拿到表单的resetFields 方法-->
-    <el-dialog title="添加用户" :visible.sync="dialogVisible" width="60%">
-      <!-- 对话框主体信息 -->
+    <Addusers ref="addform" :dialogVisible="dialogVisible" @addformConfirm="addformConfirm"></Addusers>
+    <!-- <el-dialog title="添加用户" :visible.sync="dialogVisible" width="60%">
+     
       <el-form ref="addform" :model="addform" :rules="addformRules" status-icon label-width="80px">
         <el-form-item label="用户名" prop="username">
           <el-input v-model="addform.username"></el-input>
@@ -110,14 +110,14 @@
         <el-form-item label="手机" prop="mobile">
           <el-input v-model="addform.mobile"></el-input>
         </el-form-item>
-      </el-form>
-      <!-- 底部的确认 /取消 -->
-      <span slot="footer" class="dialog-footer">
+    </el-form>-->
+    <!-- 底部的确认 /取消 -->
+    <!-- <span slot="footer" class="dialog-footer">
         <el-button @click="dialogVisible = false">取 消</el-button>
         <el-button type="primary" @click="addformConfirm">确 定</el-button>
         <el-button @click="closeReset">重置</el-button>
       </span>
-    </el-dialog>
+    </el-dialog>-->
 
     <!-- 编辑用户的对话框 -->
 
@@ -140,11 +140,46 @@
         <el-button type="primary" @click="editformConfirm">确 定</el-button>
       </span>
     </el-dialog>
+
+    <!-- 分配角色对话框  -->
+    <el-dialog title="分配角色" :visible.sync="allotVisible" width="60%">
+      <!-- 对话框主体信息 -->
+      <el-form :model="allotform" ref="allotform" label-width="100px">
+        <el-form-item label="当前用户">
+          <el-input v-model="scopeRow.username" disabled></el-input>
+        </el-form-item>
+        <el-form-item label="当前角色">
+          <el-input v-model="scopeRow.role_name"></el-input>
+        </el-form-item>
+        
+        <el-form-item label="分配新角色">
+          <el-select v-model="newRole" placeholder="请选择">
+            <el-option
+              v-for="(item) in roleList"
+              :key="item.id"
+              :label="item.roleName"
+              :value="item.id"
+            ></el-option>
+          </el-select>
+        </el-form-item>
+      </el-form>
+
+      <span slot="footer" class="dialog-footer">
+        <el-button @click="allotVisible = false">取 消</el-button>
+        <el-button type="primary" @click="allotformConfirm">确 定</el-button>
+      </span>
+    </el-dialog>
   </div>
 </template>
 
 <script>
+import Crumb from "@/components/common/crumb.vue";
+import Addusers from "components/common/addusers.vue";
 export default {
+  components: {
+    Crumb,
+    Addusers
+  },
   data() {
     /* 自定义校验规则 */
     const checkEmail = (rule, value, callback) => {
@@ -160,6 +195,10 @@ export default {
       callback(new Error("请输入正确的手机号码"));
     };
     return {
+      name: {
+        manage: "用户管理",
+        b: "用户列表"
+      },
       userList: {},
       getUserParams: {
         query: "",
@@ -169,14 +208,20 @@ export default {
       total: 100,
       dialogVisible: false,
       editVisible: false,
+      allotVisible: false,
       addform: {
         username: "",
         password: "",
         email: "",
         mobile: ""
       },
+      newRole:'',
       userInfo: {},
       editform: {},
+      allotform: {},
+      scopeRow: {},
+      roleList:{},
+      
       addformRules: {
         username: [
           { required: true, message: "请输入用户名", trigger: "blur" },
@@ -265,20 +310,23 @@ export default {
       this.$refs.addform.resetFields();
     },
     /* 7. 添加用户的表单的确认方法，先预校验，再往后台传递数据 */
-    addformConfirm() {
+    addformConfirm(e) {
       /* 1.如果确认预校验成功，要 先让表单消失，调用 dialogVisible = false*/
-      this.$refs.addform.validate(value => {
+      /* this.$refs.addform.validate(value => {
         if (!value) return;
-        /* 预校验成功，发起请求 */
+        
         this.$axios.post("users", this.addform).then(e => {
           //console.log(e.data);
           if (e.data.meta.status !== 201)
             return this.$message.error(e.data.meta.msg);
-          /* 往后台添加用户数据成功后，1：让表单消失；2：刷新用户列表数据 */
+         
           this.dialogVisible = false;
           this.getUserList();
         });
-      });
+      }); */
+      this.dialogVisible = false;
+
+      this.getUserList();
     },
     /* 8.点击编辑图标 函数功能 */
     editUser(id) {
@@ -324,7 +372,7 @@ export default {
     },
     /* 11. 删除用户 按钮函数 */
     clearUser(id) {
-      console.log(id);
+      //console.log(id);
       this.$confirm("此操作将永久删除改用户, 是否继续?", "提示", {
         confirmButtonText: "确定",
         cancelButtonText: "取消",
@@ -335,12 +383,12 @@ export default {
             type: "success",
             message: "删除成功!"
           });
-           /* 确认 删除用户信息后 向后台发送请求 */
-           this.$axios.delete('users/'+id).then(e=>{
-              if (e.data.meta.status !== 200)
+          /* 确认 删除用户信息后 向后台发送请求 */
+          this.$axios.delete("users/" + id).then(e => {
+            if (e.data.meta.status !== 200)
               return this.$message.error(e.data.meta.msg);
-             this.getUserList()
-           })
+            this.getUserList();
+          });
         })
         .catch(() => {
           this.$message({
@@ -348,12 +396,28 @@ export default {
             message: "已取消删除"
           });
         });
-
-      
     },
-   
+    /* 12. 分配角色 图标按钮 */
+    allotRole(row) {
+      this.scopeRow = row;
+      //console.log(this.scopeRow);
+      this.allotVisible = true;
+      this.$axios.get('roles').then(e=>{
+        //console.log(e.data)
+        this.roleList=e.data.data
 
-
+      }
+      )},
+    /* 13. 分配角色 图标 确认之后的请求，users/:userid/role */
+    allotformConfirm(){
+      console.log(this.newRole)
+      
+      this.$axios.put(`users/${this.scopeRow.id}/role`,{
+        rid:this.newRole
+      }).then(e=>{
+        console.log(e.data)
+      })
+    }
   }
 };
 </script>
@@ -372,5 +436,9 @@ export default {
 }
 .el-pagination {
   margin-top: 15px;
+}
+.el-select{
+  display: flex;
+  justify-content: flex-start;
 }
 </style>
