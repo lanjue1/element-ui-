@@ -197,7 +197,7 @@ export default {
     return {
       name: {
         manage: "用户管理",
-        b: "用户列表"
+        user: "用户列表"
       },
       userList: {},
       getUserParams: {
@@ -416,6 +416,8 @@ export default {
         rid:this.newRole
       }).then(e=>{
         console.log(e.data)
+        this.allotVisible=false
+        this.getUserList()
       })
     }
   }

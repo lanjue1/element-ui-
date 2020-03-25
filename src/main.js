@@ -3,12 +3,14 @@ import App from './App.vue'
 import './registerServiceWorker'
 import router from './router/index'
 import store from './store'
+import ZkTable from 'vue-table-with-tree-grid';
 
 import ElementUI from 'element-ui';
 import {Message} from 'element-ui';
 
 import 'element-ui/lib/theme-chalk/index.css';
 import 'element-ui/lib/index.js';
+
 
 import './assets/base.css'
 
@@ -25,6 +27,7 @@ axios.interceptors.request.use(config=>{
 Vue.use(ElementUI);
 Vue.prototype.$message=Message;
 Vue.prototype.$axios=axios;
+Vue.component('ZkTable', ZkTable)
 
 
 // import {Button,Form,FormItem,Input
