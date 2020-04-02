@@ -26,7 +26,7 @@
         <el-tab-pane label="用户管理" name="many">
           <el-row :gutter="15">
             <el-col :span="2">
-              <el-button type="primary" class="paramsBtn" @click="addParams">动态参数</el-button>
+              <el-button type="primary" class="paramsBtn" @click="addParams" :disabled="disabledBtn">动态参数</el-button>
             </el-col>
           </el-row>
 
@@ -70,7 +70,7 @@
         <el-tab-pane label="配置管理" name="only">
           <el-row :gutter="15">
             <el-col :span="2">
-              <el-button type="primary" class="paramsBtn" @click="addParams">静态参数</el-button>
+              <el-button type="primary" class="paramsBtn" @click="addParams" :disabled="disabledBtn">静态参数</el-button>
             </el-col>
           </el-row>
 
@@ -185,7 +185,7 @@ export default {
         label: "cat_name",
         children: "children"
       },
-
+      disabledBtn:false,
       activeName: "many",
       cateId: "",
       paramsList: [],
@@ -238,6 +238,7 @@ export default {
       this.cateId = this.cascaderIdArr[2]; //拿到树形选项中被选中项的 3级id
       // console.log(this.cateId)
       this.getTabsParams();
+
     },
     /* 3. tabs切换时函数 */
     tabsParams() {
@@ -249,7 +250,16 @@ export default {
     getTabsParams() {
       /* 在这个函数中，获取到不同状态下 的 具体的参数 数据
         get:  categories/:cateId/attributes  参数： [only,many]]] */
+        // 如果选中的不是3级的分类，那么就不给选中， 让数组为空
+        if(this.cascaderIdArr.length!==3){
+          this.disabledBtn=true
+          this.cascaderIdArr=[]
+        this.paramsMany=[]
+        this.paramsOnly=[]
+          return
 
+        }
+      this.disabledBtn=false
       this.$axios
         .get(`categories/${this.cateId}/attributes`, {
           params: { sel: this.activeName }

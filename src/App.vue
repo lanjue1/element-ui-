@@ -4,6 +4,7 @@
   </div>
 </template>
 <script>
+
 export default {
   name:'app',
 }
@@ -17,6 +18,7 @@ export default {
   color: #2c3e50;
   min-width: 1336px;
 }
+
 
 
 </style>
