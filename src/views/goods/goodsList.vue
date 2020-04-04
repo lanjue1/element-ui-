@@ -31,7 +31,7 @@
         <el-table-column label="创建时间" prop="add_time">
           <template v-slot:default="scope">{{scope.row.add_time*1000 | dateFormat}}</template>
         </el-table-column>
-        <el-table-column label="操作">
+        <el-table-column label="操作" width="200px">
           <template v-slot:default="scope">
             <el-button size="mini" type="primary" icon="el-icon-edit">编辑</el-button>
             <el-button
